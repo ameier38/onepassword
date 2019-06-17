@@ -114,23 +114,22 @@ const mockItemResponse = `
 }
 `
 
-func TestParse(t *testing.T) {
-	res := itemResponse(mockItemResponse)
-	expectedSectionMap := sectionMap{
-		sectionName("Terraform"): fieldMap{
-			fieldName("type"):               fieldValue("postgresql"),
-			fieldName("server"):             fieldValue("redshift.company.io"),
-			fieldName("port"):               fieldValue("5439"),
-			fieldName("database"):           fieldValue("test-db"),
-			fieldName("username"):           fieldValue("test-user"),
-			fieldName("password"):           fieldValue("test-password"),
-			fieldName("SID"):                fieldValue(""),
-			fieldName("alias"):              fieldValue(""),
-			fieldName("connection options"): fieldValue(""),
-			fieldName("schema"):             fieldValue("development"),
+func TestParseItemResponse(t *testing.T) {
+	expectedSectionMap := ItemMap{
+		SectionName("Terraform"): FieldMap{
+			FieldName("type"):               FieldValue("postgresql"),
+			FieldName("server"):             FieldValue("redshift.company.io"),
+			FieldName("port"):               FieldValue("5439"),
+			FieldName("database"):           FieldValue("test-db"),
+			FieldName("username"):           FieldValue("test-user"),
+			FieldName("password"):           FieldValue("test-password"),
+			FieldName("SID"):                FieldValue(""),
+			FieldName("alias"):              FieldValue(""),
+			FieldName("connection options"): FieldValue(""),
+			FieldName("schema"):             FieldValue("development"),
 		},
 	}
-	actualSectionMap, err := res.parseResponse()
+	actualSectionMap, err := parseItemResponse([]byte(mockItemResponse))
 	if assert.Nil(t, err) {
 		assert.Equal(t, expectedSectionMap, actualSectionMap, "section maps should equal")
 	}

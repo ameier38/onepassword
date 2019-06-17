@@ -10,16 +10,15 @@ import (
 	"sync"
 )
 
-type vaultName string
-type itemName string
-type documentName string
-type documentValue string
-type sectionName string
-type fieldName string
-type fieldValue string
-type itemResponse []byte
-type fieldMap map[fieldName]fieldValue
-type sectionMap map[sectionName]fieldMap
+type VaultName string
+type ItemName string
+type DocumentName string
+type DocumentValue string
+type SectionName string
+type FieldName string
+type FieldValue string
+type FieldMap map[FieldName]FieldValue
+type ItemMap map[SectionName]FieldMap
 
 // Client : 1Password client
 type Client struct {
@@ -88,41 +87,55 @@ func (op *Client) authenticate() error {
 	return nil
 }
 
-func (res itemResponse) parseResponse() (sectionMap, error) {
-	sm := make(sectionMap)
+func parseItemResponse(res []byte) (ItemMap, error) {
+	im := make(ItemMap)
 	pItem := parsedItem{}
 	if err := json.Unmarshal(res, &pItem); err != nil {
-		return sm, err
+		return im, err
 	}
 	for _, section := range pItem.Details.Sections {
-		fm := make(fieldMap)
+		fm := make(FieldMap)
 		for _, field := range section.Fields {
-			fm[fieldName(field.Key)] = fieldValue(field.Value)
+			fm[FieldName(field.Key)] = FieldValue(field.Value)
 		}
-		sm[sectionName(section.Title)] = fm
+		im[SectionName(section.Title)] = fm
 	}
-	return sm, nil
+	return im, nil
+}
+
+func NewClient(opPath string, subdomain string, email string, password string, secretKey string) *Client {
+	return &Client{
+		OpPath:    opPath,
+		Subdomain: subdomain,
+		Email:     email,
+		Password:  password,
+		SecretKey: secretKey,
+	}
 }
 
 // Calls `op get item` command.
 // usage: op get item <item> [--vault=<vault>] [--session=<session>]
-func (op Client) getItem(vault vaultName, item itemName) (itemResponse, error) {
+func (op Client) GetItem(vault VaultName, item ItemName) (ItemMap, error) {
 	vaultArg := getArg("vault", string(vault))
 	res, err := op.runCmd("get", "item", string(item), vaultArg)
 	if err != nil {
-		return itemResponse(""), fmt.Errorf("error getting item: %s", err)
+		return make(ItemMap), fmt.Errorf("error getting item: %s", err)
 	}
-	return itemResponse(res), nil
+	im, err := parseItemResponse(res)
+	if err != nil {
+		return im, fmt.Errorf("error parsing response: %s", err)
+	}
+	return im, nil
 }
 
 // Calls `op get document` command
 // usage: op get document <document> [--vault=<vault>] [--session=<session>]
-func (op Client) getDocument(vault vaultName, docName documentName) (documentValue, error) {
+func (op Client) GetDocument(vault VaultName, docName DocumentName) (DocumentValue, error) {
 	vaultArg := getArg("vault", string(vault))
 	res, err := op.runCmd("get", "document", string(docName), vaultArg)
 	if err != nil {
 		err = fmt.Errorf("error getting document: %s", err)
-		return documentValue(""), err
+		return DocumentValue(""), err
 	}
-	return documentValue(res), nil
+	return DocumentValue(res), nil
 }
