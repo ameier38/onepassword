@@ -103,14 +103,19 @@ func parseItemResponse(res []byte) (ItemMap, error) {
 	return im, nil
 }
 
-func NewClient(opPath string, subdomain string, email string, password string, secretKey string) *Client {
-	return &Client{
+func NewClient(opPath string, subdomain string, email string, password string, secretKey string) (*Client, error) {
+	client := &Client{
 		OpPath:    opPath,
 		Subdomain: subdomain,
 		Email:     email,
 		Password:  password,
 		SecretKey: secretKey,
+		mutex:     &sync.Mutex{},
 	}
+	if err := client.authenticate(); err != nil {
+		return nil, err
+	}
+	return client, nil
 }
 
 // Calls `op get item` command.

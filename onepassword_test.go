@@ -114,23 +114,41 @@ const mockItemResponse = `
 }
 `
 
+var expectedItemMap = ItemMap{
+	SectionName("Terraform"): FieldMap{
+		FieldName("type"):               FieldValue("postgresql"),
+		FieldName("server"):             FieldValue("redshift.company.io"),
+		FieldName("port"):               FieldValue("5439"),
+		FieldName("database"):           FieldValue("test-db"),
+		FieldName("username"):           FieldValue("test-user"),
+		FieldName("password"):           FieldValue("test-password"),
+		FieldName("SID"):                FieldValue(""),
+		FieldName("alias"):              FieldValue(""),
+		FieldName("connection options"): FieldValue(""),
+		FieldName("schema"):             FieldValue("development"),
+	},
+}
+
 func TestParseItemResponse(t *testing.T) {
-	expectedSectionMap := ItemMap{
-		SectionName("Terraform"): FieldMap{
-			FieldName("type"):               FieldValue("postgresql"),
-			FieldName("server"):             FieldValue("redshift.company.io"),
-			FieldName("port"):               FieldValue("5439"),
-			FieldName("database"):           FieldValue("test-db"),
-			FieldName("username"):           FieldValue("test-user"),
-			FieldName("password"):           FieldValue("test-password"),
-			FieldName("SID"):                FieldValue(""),
-			FieldName("alias"):              FieldValue(""),
-			FieldName("connection options"): FieldValue(""),
-			FieldName("schema"):             FieldValue("development"),
-		},
-	}
-	actualSectionMap, err := parseItemResponse([]byte(mockItemResponse))
+	actualItemMap, err := parseItemResponse([]byte(mockItemResponse))
 	if assert.Nil(t, err) {
-		assert.Equal(t, expectedSectionMap, actualSectionMap, "section maps should equal")
+		assert.Equal(t, expectedItemMap, actualItemMap, "item maps should equal")
 	}
+}
+
+func TestGetItem(t *testing.T) {
+	opPath, err := buildMockOnePassword()
+	if err != nil {
+		t.Errorf("failed to build mock 1Password CLI: %s", err)
+	}
+	client, err := NewClient(opPath, "test-subdomain", "test@subdomain.com", "test-password", "test-secret-key")
+	if err != nil {
+		t.Errorf("failed to create Client: %s", err)
+	}
+	assert.Equal(t, "test-session", client.Session)
+	actualItemMap, err := client.GetItem(VaultName("test-vault"), ItemName("test-item"))
+	if err != nil {
+		t.Errorf("error getting item: %s", err)
+	}
+	assert.Equal(t, expectedItemMap, actualItemMap)
 }
