@@ -1,4 +1,4 @@
-module github.com/ameier38/onepassword-client
+module github.com/ameier38/onepassword
 
 go 1.12
 
